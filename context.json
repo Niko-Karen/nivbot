@@ -1,0 +1,30 @@
+[
+  {
+    "user": "哈咯",
+    "ai": "AI连接失败，请检查密钥"
+  },
+  {
+    "user": "哈咯",
+    "ai": "Qwen调用失败：'choices'"
+  },
+  {
+    "user": "哈咯",
+    "ai": "Qwen错误：{'error': {'message': 'The model `qwen-Plus-2025-07-28` does not exist or you do not have access to it.', 'type': 'invalid_request_error', 'param': None, 'code': 'model_not_found'}, 'request_id': 'a33b6ac1-0e77-9e84-b4fd-e81f6c51bbbc'}"
+  },
+  {
+    "user": "哈咯",
+    "ai": "哈喽，我是Qwen，看起来之前遇到了一些技术问题。现在我在这里，可以帮你解答问题或提供帮助！有什么我可以帮你的吗？"
+  },
+  {
+    "user": "什么是量子计算",
+    "ai": "量子计算是利用量子力学原理（如叠加和纠缠）进行信息处理的计算技术。它使用量子比特（qubit），可同时处于0和1的状态，从而在某些问题上比传统计算机更快。"
+  },
+  {
+    "user": "量子计算是什么",
+    "ai": "Qwen调用失败：HTTPSConnectionPool(host='dashscope.aliyuncs.com',"
+  },
+  {
+    "user": "量子计算是什么",
+    "ai": "量子计算是利用量子叠加和纠缠等量子力学原理，通过量子比特（可同时表示0和1）进行信息处理的计算方式，在某些问题上比传统计算机更快。\n\n📊 Token用量：提示词=368 | 生成=39 | 总计=407"
+  }
+]

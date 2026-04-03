@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>私人记忆AI</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="container">
+    <div class="chat" id="chat"></div>
+    <div class="tools">
+        <label><input type="checkbox" id="deep"> 深度思考</label>
+        <input type="file" id="file" style="display:none">
+        <button onclick="file.click()">文件</button>
+    </div>
+    <div class="input-bar">
+        <input id="msg" placeholder="输入消息..." autocomplete="off">
+        <button onclick="send()">发送</button>
+    </div>
+</div>
+<script src="/static/script.js"></script>
+</body>
+</html>
