@@ -5,14 +5,18 @@ from pydantic import BaseModel
 import json
 import os
 import requests
+from dotenv import load_dotenv
+load_dotenv()
+
+
 
 app = FastAPI()
 
 # ====================== 配置区（你只改这里）======================
-AI_API_KEY = "sk-7bd482a591c04dee85e363ddd33b3fde"
 AI_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"  # 国内可填：https://api.deepseek.com
+AI_API_KEY = os.getenv("API_KEY")
+LOGIN_PASSWORD = os.getenv("PASSWORD")
 MODEL_NAME = "qwen-plus-2025-07-28"  # qwen
-LOGIN_PASSWORD = "200992"
 MAX_MEMORY = 20  # 最大记忆条数（省Token）
 MAX_CONTEXT = 12  # 最大上下文轮数
 
