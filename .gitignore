@@ -1,0 +1,4 @@
+.env
+memory.json
+context.json
+__pycache__
