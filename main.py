@@ -48,7 +48,7 @@ def compress_memory():
         keys = sorted(mem.keys())[-MAX_MEMORY:]
         for i, k in enumerate(keys):
             new_mem[str(i+1)] = mem[k]
-        save_json("memory.json", new_mem)
+        # save_json("memory.json", new_mem)
 
 # 提取记忆
 def extract_memory(user_msg, ai_reply):
@@ -75,7 +75,7 @@ AI：{ai_reply}
             if line and len(line) > 2:
                 memory[str(len(memory)+1)] = line[:90]
         compress_memory()
-        save_json("memory.json", memory)
+        # save_json("memory.json", memory)
     except:
         pass
 
@@ -228,21 +228,21 @@ async def memory_panel(auth: str = Cookie(None)):
 async def add_mem(text: str):
     mem = load_json("memory.json", {})
     mem[str(len(mem)+1)] = text.strip()[:120]
-    save_json("memory.json", mem)
+    # save_json("memory.json", mem)
     return {"ok":1}
 
 @app.get("/api/memory/edit")
 async def edit_mem(k: str, v: str):
     mem = load_json("memory.json", {})
     if k in mem: mem[k] = v.strip()
-    save_json("memory.json", mem)
+    # save_json("memory.json", mem)
     return {"ok":1}
 
 @app.get("/api/memory/del")
 async def del_mem(k: str):
     mem = load_json("memory.json", {})
     if k in mem: del mem[k]
-    save_json("memory.json", mem)
+    # save_json("memory.json", mem)
     return {"ok":1}
 
 # ====================== 手表版+语音输入 ======================
@@ -317,7 +317,7 @@ async def api_chat(req: ChatReq, auth: str = Cookie(None)):
     reply = ai_chat(msg, deep)
     ctx = load_json("context.json", [])
     ctx.append({"user": msg, "ai": reply})
-    save_json("context.json", ctx[-MAX_CONTEXT:])
+    # save_json("context.json", ctx[-MAX_CONTEXT:])
     extract_memory(msg, reply)
     return {"reply": reply}
 
