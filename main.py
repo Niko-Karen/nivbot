@@ -1,5 +1,5 @@
-from fastapi import FastAPI, Form
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse, FileResponse
 from pydantic import BaseModel
 import json
 import os
@@ -8,12 +8,11 @@ import redis
 
 app = FastAPI()
 
-# 环境变量
 AI_API_KEY = os.getenv("AI_API_KEY", "")
 AI_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 MODEL_NAME = "qwen-plus-2025-07-28"
 
-# Redis 连接（Vercel Redis / Upstash）
+# Redis
 redis_client = None
 try:
     redis_client = redis.from_url(
@@ -25,14 +24,12 @@ try:
 except Exception:
     redis_client = None
 
-# Redis 持久化存储
 def get_memory():
     try:
         if redis_client:
             return json.loads(redis_client.get("memory") or "{}")
     except:
-        pass
-    return {}
+        return {}
 
 def set_memory(mem):
     try:
@@ -46,8 +43,7 @@ def get_context():
         if redis_client:
             return json.loads(redis_client.get("context") or "[]")
     except:
-        pass
-    return []
+        return []
 
 def set_context(ctx):
     try:
@@ -56,11 +52,9 @@ def set_context(ctx):
     except:
         pass
 
-# AI 对话
 def ai_chat(user_msg, deep_mode):
     memory = get_memory()
     context = get_context()
-
     mem_text = "；".join(memory.values())
     ctx_text = "\n".join([f"U:{c['user']}\nA:{c['ai']}" for c in context[-6:]])
     prompt = f"""记忆：{mem_text}\n上下文：{ctx_text}\n用户：{user_msg}\n要求：{"详细深度思考" if deep_mode else "简短清晰"}"""
@@ -79,7 +73,6 @@ def ai_chat(user_msg, deep_mode):
         res = r.json()
         if "choices" not in res:
             return f"API 错误：{res}"
-
         content = res["choices"][0]["message"]["content"].strip()
         usage = res.get("usage", {})
         token = f"\n\n📊 Token：提示词={usage.get('prompt_tokens',0)} | 生成={usage.get('completion_tokens',0)} | 总计={usage.get('total_tokens',0)}"
@@ -87,61 +80,101 @@ def ai_chat(user_msg, deep_mode):
     except Exception as e:
         return f"调用失败：{str(e)[:60]}"
 
-# 首页
+# PWA Manifest
+@app.get("/manifest.json")
+def manifest():
+    data = {
+        "name": "Personal AI",
+        "short_name": "AI",
+        "start_url": "/",
+        "display": "standalone",
+        "background_color": "#121213",
+        "theme_color": "#007aff",
+        "icons": [{
+            "src": "https://cdn-icons-png.flaticon.com/512/5996/5996926.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }]
+    }
+    return HTMLResponse(json.dumps(data), media_type="application/json")
+
+# 主页美化版
 @app.get("/", response_class=HTMLResponse)
 def home():
     return """
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Personal AI</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#007aff">
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:sans-serif}
-body{background:#121213;color:#fff;padding:10px}
-.container{max-width:440px;margin:0 auto}
-.chat{height:70vh;background:#1c1c1e;border-radius:10px;padding:10px;overflow-y:auto;margin-bottom:10px}
-.msg{margin:6px 0;padding:9px 12px;border-radius:14px;max-width:74%}
-.user{background:#007aff;margin-left:auto}
-.ai{background:#38383a;margin-right:auto}
-.tools{display:flex;gap:8px;margin-bottom:8px}
-#msg{width:100%;padding:10px;border-radius:20px;background:#2c2c2e;color:#fff;border:none;margin-bottom:8px}
-button{padding:10px 14px;background:#007aff;color:#fff;border:none;border-radius:20px}
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial}
+body{background:#0c0c0e;color:#e3e3e3;min-height:100vh;padding:12px}
+.container{max-width:540px;margin:0 auto}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.header h1{font-size:20px;color:#fff}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.btn{padding:8px 12px;border-radius:14px;background:#1c1c1e;border:none;color:#fff;font-size:14px}
+.btn-primary{background:#007aff;color:white}
+.chat{height:72vh;background:#141417;border-radius:18px;padding:14px;overflow-y:auto;display:flex;flex-direction:column;gap:10px}
+.msg{padding:10px 14px;border-radius:16px;max-width:80%;line-height:1.5}
+.user{align-self:flex-end;background:#007aff;color:white}
+.ai{align-self:flex-start;background:#24242a;color:#e3e3e3}
+.input-bar{position:sticky;bottom:0;background:#0c0c0e;padding-top:10px}
+.input-wrap{display:flex;gap:8px}
+input{flex:1;padding:14px 16px;border-radius:24px;background:#1c1c1e;border:none;color:#fff;font-size:15px}
+.send-btn{width:48px;height:48px;border-radius:50%;background:#007aff;border:none;color:white;font-size:18px}
 </style>
 </head>
 <body>
 <div class="container">
-<div class="tools">
-<label><input type="checkbox" id="deep">深度思考</label>
-<button onclick="window.open('/watch','_blank')">手表版</button>
-<button onclick="window.open('/memory','_blank')">记忆</button>
+<div class="header">
+<h1>Personal AI</h1>
+</div>
+<div class="toolbar">
+<label style="display:flex;align-items:center;gap:6px;background:#1c1c1e;padding:6px 10px;border-radius:12px">
+<input type="checkbox" id="deep">深度思考
+</label>
+<button class="btn" onclick="window.open('/watch','_blank')">⌚ 手表版</button>
+<button class="btn" onclick="window.open('/memory','_blank')">🧠 记忆</button>
 </div>
 <div class="chat" id="chat"></div>
-<input id="msg" placeholder="输入...">
-<button onclick="send()" style="width:100%">发送</button>
+<div class="input-bar">
+<div class="input-wrap">
+<input id="msg" placeholder="输入消息..." autocomplete="off">
+<button class="send-btn" onclick="send()">↑</button>
+</div>
+</div>
 </div>
 <script>
 function send(){
-  let m = document.getElementById('msg').value.trim();
-  let d = document.getElementById('deep').checked;
+  const m = document.getElementById('msg').value.trim();
+  const d = document.getElementById('deep').checked;
   if(!m)return;
+  const chat = document.getElementById('chat');
   chat.innerHTML += `<div class='msg user'>${m}</div>`;
   document.getElementById('msg').value='';
   fetch('/api/chat',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({msg:m, deep_mode:d})
-  }).then(r=>r.json()).then(j=>{
+    body:JSON.stringify({msg:m,deep_mode:d})
+  }).then(res=>res.json()).then(j=>{
     chat.innerHTML += `<div class='msg ai'>${j.reply}</div>`;
     chat.scrollTop = chat.scrollHeight;
   });
 }
+document.getElementById('msg').addEventListener('keypress',e=>{
+  if(e.key==='Enter')send()
+})
 </script>
 </body>
 </html>
 """
 
-# 手表版 + 语音输入
+# 手表美化版
 @app.get("/watch", response_class=HTMLResponse)
 def watch():
     return """
@@ -152,28 +185,30 @@ def watch():
 <title>Watch AI</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#000;color:#fff}
-#chat{height:60vh;background:#111;padding:8px;border-radius:8px;overflow-y:auto}
-.msg{margin:4px;padding:6px;border-radius:10px;max-width:80%}
+body{background:#000;color:#fff;font-family:-apple-system}
+#chat{height:55vh;background:#111;border-radius:12px;padding:10px;overflow-y:auto}
+.msg{margin:4px;padding:6px 10px;border-radius:12px;max-width:80%;font-size:14px}
 .user{background:#007aff;margin-left:auto}
 .ai{background:#222;margin-right:auto}
-input{width:65%;padding:8px;background:#222;color:#fff;border:none;border-radius:20px}
-button{padding:8px;background:#007aff;color:#fff;border:none;border-radius:20px}
+.input{display:flex;gap:6px;margin-top:10px}
+#msg{flex:1;padding:10px;border-radius:20px;background:#222;color:#fff;border:none}
+button{padding:10px 12px;background:#007aff;color:#fff;border:none;border-radius:20px}
 </style>
 </head>
 <body>
 <div id="chat"></div>
-<br>
-<button id="voice">🎤语音</button>
+<div class="input">
+<button id="voice">🎤</button>
 <input id="msg" placeholder="...">
 <button onclick="send()">发送</button>
+</div>
 <script>
 const rec = new (window.SpeechRecognition||window.webkitSpeechRecognition)();
 rec.lang='zh-CN';
 voice.onclick=()=>rec.start();
 rec.onresult=e=>document.getElementById('msg').value=e.results[0][0].transcript;
 function send(){
-  let m=document.getElementById('msg').value.trim();
+  const m=document.getElementById('msg').value.trim();
   if(!m)return;
   fetch('/api/chat',{
     method:'POST',
@@ -193,13 +228,15 @@ function send(){
 @app.get("/memory", response_class=HTMLResponse)
 def memory():
     mem = get_memory()
-    lines = "".join([f"<div style='margin:4px'>• {v}</div>" for k, v in mem.items()])
+    items = "".join([f"<div style='padding:8px;background:#1c1c1e;border-radius:12px;margin:4px'>• {v}</div>" for k,v in mem.items()])
     return f"""
-    <div style='background:#121213;color:#fff;padding:20px'>
-    <h3>永久记忆</h3>{lines}</div>
-    """
+<div style='background:#0c0c0e;color:#fff;padding:20px;min-height:100vh'>
+<h2 style='margin-bottom:14px'>🧠 永久记忆</h2>
+{items}
+</div>
+"""
 
-# 聊天接口
+# 接口
 class ChatReq(BaseModel):
     msg: str
     deep_mode: bool
@@ -209,7 +246,6 @@ def chat_api(req: ChatReq):
     deep = req.deep_mode
     reply = ai_chat(msg, deep)
 
-    # 存储到 Redis
     ctx = get_context()
     ctx.append({"user": msg, "ai": reply})
     if len(ctx) > 6:
@@ -217,12 +253,12 @@ def chat_api(req: ChatReq):
     set_context(ctx)
 
     mem = get_memory()
-    mem[str(len(mem) + 1)] = msg[:80]
+    mem[str(len(mem)+1)] = msg[:80]
     set_memory(mem)
 
     return {"reply": reply}
 
 app.post("/api/chat")(chat_api)
 
-# Vercel 入口
+# Vercel
 handler = app
