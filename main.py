@@ -129,14 +129,17 @@ def login(pwd: str = Form(...)):
     return RedirectResponse("/login", status_code=302)
 
 # 鉴权中间件
-async def check_auth(auth: str = Cookie(None)):
+def check_auth(auth: str = Cookie(None)):
     if auth != "ok":
         return RedirectResponse("/login", status_code=302)
 
 # ====================== 主界面 ======================
 @app.get("/", response_class=HTMLResponse)
-async def home(request: Request, auth: str = Cookie(None)):
-    if auth != "ok":
+def home(request: Request, auth: str = Cookie(None)):
+    try:
+        if auth != "ok":
+            return RedirectResponse("/login")
+    except:
         return RedirectResponse("/login")
     return """
 <!DOCTYPE html>
@@ -194,7 +197,7 @@ document.getElementById('msg').addEventListener('keypress',e=>{if(e.key==='Enter
 
 # ====================== 记忆查看/编辑面板 ======================
 @app.get("/memory", response_class=HTMLResponse)
-async def memory_panel(auth: str = Cookie(None)):
+def memory_panel(auth: str = Cookie(None)):
     if auth != "ok":
         return RedirectResponse("/login")
     mem = load_json("memory.json", {})
@@ -225,21 +228,21 @@ async def memory_panel(auth: str = Cookie(None)):
     """
 
 @app.get("/api/memory/add")
-async def add_mem(text: str):
+def add_mem(text: str):
     mem = load_json("memory.json", {})
     mem[str(len(mem)+1)] = text.strip()[:120]
     # save_json("memory.json", mem)
     return {"ok":1}
 
 @app.get("/api/memory/edit")
-async def edit_mem(k: str, v: str):
+def edit_mem(k: str, v: str):
     mem = load_json("memory.json", {})
     if k in mem: mem[k] = v.strip()
     # save_json("memory.json", mem)
     return {"ok":1}
 
 @app.get("/api/memory/del")
-async def del_mem(k: str):
+def del_mem(k: str):
     mem = load_json("memory.json", {})
     if k in mem: del mem[k]
     # save_json("memory.json", mem)
@@ -247,7 +250,7 @@ async def del_mem(k: str):
 
 # ====================== 手表版+语音输入 ======================
 @app.get("/watch", response_class=HTMLResponse)
-async def watch_page(auth: str = Cookie(None)):
+def watch_page(auth: str = Cookie(None)):
     if auth != "ok":
         return RedirectResponse("/login")
     return """
@@ -309,7 +312,7 @@ class ChatReq(BaseModel):
     deep_mode: bool
 
 @app.post("/api/chat")
-async def api_chat(req: ChatReq, auth: str = Cookie(None)):
+def api_chat(req: ChatReq, auth: str = Cookie(None)):
     if auth != "ok":
         return {"reply": "请先登录"}
     msg = req.msg
@@ -322,7 +325,7 @@ async def api_chat(req: ChatReq, auth: str = Cookie(None)):
     return {"reply": reply}
 
 @app.post("/api/upload")
-async def upload(file: UploadFile = File(...)):
+def upload(file: UploadFile = File(...)):
     return {"name": file.filename}
 
 app = app
