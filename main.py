@@ -93,10 +93,21 @@ def ai_chat(user_msg, deep_mode):
         )
 
         res = r.json()
+
+        # --------------------------
+        # ✅ 在这里计算并显示 Token
+        # --------------------------
         if "choices" not in res:
-            return f"API错误：{res.get('error', res)}"
+            return f"API错误：{res}"
+        
         content = res["choices"][0]["message"]["content"].strip()
-        return content
+        usage = res.get("usage", {})
+        prompt_tokens = usage.get("prompt_tokens", 0)
+        completion_tokens = usage.get("completion_tokens", 0)
+        total_tokens = usage.get("total_tokens", 0)
+
+        token_info = f"\n\n📊 Token 消耗\n• 提示词：{prompt_tokens}\n• 生成：{completion_tokens}\n• 总计：{total_tokens}"
+        return content + token_info
 
     except Exception as e:
         return f"调用失败：{str(e)[:100]}"
