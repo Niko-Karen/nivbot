@@ -78,7 +78,7 @@ def ai_chat(user_msg, deep_mode):
         r = session.post(
             "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
             headers={
-                "Authorization": f"Bearer {AI_API_KEY}",
+                "Authorization": "Bearer " + AI_API_KEY, 
                 "Content-Type": "application/json",
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
             },
